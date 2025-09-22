@@ -19,41 +19,43 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    
+
     @Autowired
     private AuthUserFilter authUserFilter;
-    
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                // Public endpoints - no authentication needed
-                .requestMatchers("/user/login", "/user/register").permitAll()
-                .requestMatchers("/pet/list", "/pet/**").permitAll() // Pet endpoints are public
+                // Public endpoints
+                .requestMatchers("/api/user/login", "/api/user/register").permitAll()
+                .requestMatchers("/api/pet/list", "/api/pet/{id}").permitAll()
                 .requestMatchers("/images/**", "/h2-console/**", "/error").permitAll()
-                
-                // Protected endpoints - authentication required
-                .requestMatchers("/user/**").authenticated() // All other user endpoints need auth
-                .requestMatchers("/admin/**").authenticated() // Admin endpoints need auth
-                
-                // Allow all other requests
-                .anyRequest().permitAll()
+
+                // Protected endpoints
+                .requestMatchers("/api/user/**").authenticated()
+                .requestMatchers("/api/admin/**").authenticated()
+                .requestMatchers("/api/pet/add").authenticated()
+
+
+                // Deny all other requests by default
+                .anyRequest().authenticated()
             )
             .addFilterBefore(authUserFilter, UsernamePasswordAuthenticationFilter.class);
-        
+
         // Allow H2 console frames
-        http.headers(headers -> headers.frameOptions().disable());
-        
+        http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
+
         return http.build();
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -61,7 +63,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

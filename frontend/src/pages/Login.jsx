@@ -13,16 +13,16 @@ const Login = () => {
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
-  const { backendUrl, token, setToken, api } = useContext(AppContext);
+  const { token, setToken, api } = useContext(AppContext);
 
   const isInputValid = () => {
     if (!emailRegex.test(email)) {
       toast.error("Enter a valid email address");
       return false;
     }
-    if (!passwordRegex.test(password)) {
+    if (mode === "Sign Up" && !passwordRegex.test(password)) {
       toast.error(
-        "Password must be ≥8 characters and include letters, numbers and symbols"
+        "Password must be at least 8 characters long and include letters, numbers, and symbols."
       );
       return false;
     }
@@ -35,35 +35,18 @@ const Login = () => {
     if (!isInputValid()) return;
 
     try {
-      if (mode === "Sign Up") {
-        // Use api instance for registration
-        const { data } = await api.post("api/user/register", {
-          name,
-          email,
-          password,
-        });
+      const endpoint = mode === "Sign Up" ? "/api/user/register" : "/api/user/login";
+      const payload = mode === "Sign Up" ? { name, email, password } : { email, password };
+      const { data } = await api.post(endpoint, payload);
 
-        if (data.success) {
-          localStorage.setItem("token", data.token);
-          setToken(data.token);
-          toast.success("Registration successful!");
-        } else {
-          toast.error(data.message);
-        }
+      if (data.success) {
+        localStorage.setItem("token", data.token);
+        setToken(data.token);
+        toast.success(`Registration successful!`);
       } else {
-        // Use api instance for login
-        const { data } = await api.post("api/user/login", { email, password });
-
-        if (data.success) {
-          localStorage.setItem("token", data.token);
-          setToken(data.token);
-          toast.success("Login successful!");
-        } else {
-          toast.error(data.message);
-        }
+        toast.error(data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.response?.data?.message || "An error occurred");
     }
   };
@@ -80,7 +63,7 @@ const Login = () => {
         <p className="text-2xl font-semibold">
           {mode === "Sign Up" ? "Create Account" : "Login"}
         </p>
-        <p>Please {mode === "Sign Up" ? "sign up" : "log in"} to book visit</p>
+        <p>Please {mode === "Sign Up" ? "sign up" : "log in"} to book a visit</p>
         {mode === "Sign Up" && (
           <div className="w-full">
             <p>Full Name</p>
