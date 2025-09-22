@@ -8,7 +8,6 @@ const AppContextProvider = (props) => {
   const currencySymbol = "₹";
   const backendUrl =
     import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
-
   const [pets, setPets] = useState([]);
   const [token, setToken] = useState(
     localStorage.getItem("token") ? localStorage.getItem("token") : ""
@@ -40,12 +39,16 @@ const AppContextProvider = (props) => {
       return response;
     },
     (error) => {
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.log("Token expired or invalid, clearing session");
         localStorage.removeItem("token");
         setToken("");
         setUserData(false);
         toast.error("Session expired. Please login again.");
-        window.location.href = "/login";
+        // Only redirect if not already on login page
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login";
+        }
       }
       return Promise.reject(error);
     }
@@ -81,13 +84,21 @@ const AppContextProvider = (props) => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.log("Error loading pets:", error);
       toast.error("Failed to load pets data");
     }
   };
 
-  // Getting User Profile using API
+  // FIXED: Getting User Profile using API with better error handling
   const loadUserProfileData = async () => {
+    // Don't attempt to load profile if no token
+    if (!token) {
+      console.log("No token available, skipping profile load");
+      return;
+    }
+
     try {
+      console.log("Loading user profile data...");
       const { data } = await api.get("/api/user/get-profile");
       if (data.success) {
         // Transform Spring Boot response to match frontend expectations
@@ -99,23 +110,34 @@ const AppContextProvider = (props) => {
               : data.userData.address || { line1: "", line2: "" },
         };
         setUserData(transformedUserData);
+        console.log("Profile loaded successfully");
       } else {
+        console.log("Profile load failed:", data.message);
         toast.error(data.message);
       }
     } catch (error) {
-      if (error.response?.status !== 401) {
+      console.log("Error loading profile:", error);
+      // Don't show error toast for auth errors (handled by interceptor)
+      if (error.response?.status !== 401 && error.response?.status !== 403) {
         toast.error("Failed to load profile data");
       }
     }
   };
 
+  // FIXED: Only call getPetsData on mount (pets are public)
   useEffect(() => {
+    console.log("AppContext mounting, loading pets data");
     getPetsData();
   }, []);
 
+  // FIXED: Better token validation before loading profile
   useEffect(() => {
-    if (token) {
+    if (token && token.trim() !== "") {
+      console.log("Token available, loading profile");
       loadUserProfileData();
+    } else {
+      console.log("No valid token, clearing user data");
+      setUserData(false);
     }
   }, [token]);
 

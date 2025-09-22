@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import com.example.pet_adoption.util.JwtUtil;
+
 import java.io.IOException;
 import java.util.Collections;
 
@@ -33,8 +34,8 @@ public class AuthUserFilter extends OncePerRequestFilter {
             return;
         }
         
-        // Check if this is a user endpoint that requires authentication
-        if (requestURI.startsWith("/user/") && !isPublicUserEndpoint(requestURI)) {
+        // FIXED: Check if this is a user endpoint that requires authentication
+        if (requestURI.startsWith("/api/user/") && !isPublicUserEndpoint(requestURI)) {
             System.out.println("AuthUserFilter: User endpoint requiring auth");
             String token = request.getHeader("token");
             
@@ -60,16 +61,14 @@ public class AuthUserFilter extends OncePerRequestFilter {
                 }
                 
                 String userId = jwtUtil.getUserIdFromToken(token);
-//                String email = jwtUtil.getEmailFromToken(token);
                 request.setAttribute("userId", Long.valueOf(userId));
-//                request.setAttribute("userEmail", email);
                 
-                // **CRITICAL**: Set Spring Security authentication context
+                // CRITICAL: Set Spring Security authentication context
                 UsernamePasswordAuthenticationToken authentication = 
                     new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 
-                System.out.println("AuthUserFilter: Token valid, userId: " + userId  + " - Authentication set!");
+                System.out.println("AuthUserFilter: Token valid, userId: " + userId + " - Authentication set!");
             } catch (Exception e) {
                 System.out.println("AuthUserFilter: Error processing token: " + e.getMessage());
                 sendUnauthorizedResponse(response, "Invalid token");
@@ -77,9 +76,9 @@ public class AuthUserFilter extends OncePerRequestFilter {
             }
         }
         
-        // Check admin endpoints (future feature)
-        if (requestURI.startsWith("/admin/") && !requestURI.contains("/admin/login")) {
-            String atoken = request.getHeader("atoken");
+        // Check admin endpoints
+        if (requestURI.startsWith("/api/admin/") && !requestURI.contains("/api/admin/login")) {
+            String atoken = request.getHeader("aToken");
             
             if (atoken == null || atoken.isEmpty()) {
                 sendUnauthorizedResponse(response, "Admin access required");
@@ -98,8 +97,6 @@ public class AuthUserFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         
-        // Pet endpoints are currently public - no authentication needed
-        
         System.out.println("AuthUserFilter: Proceeding with request");
         filterChain.doFilter(request, response);
     }
@@ -111,13 +108,14 @@ public class AuthUserFilter extends OncePerRequestFilter {
                uri.contains("/h2-console");
     }
     
+    // FIXED: Updated to check for /api/user/ paths
     private boolean isPublicUserEndpoint(String uri) {
-        return uri.contains("/user/login") || 
-               uri.contains("/user/register");
+        return uri.contains("/api/user/login") || 
+               uri.contains("/api/user/register");
     }
     
     private void sendUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN); // Changed to 403 for consistency
         response.setContentType("application/json");
         response.getWriter().write(String.format("{\"success\": false, \"message\": \"%s\"}", message));
     }
