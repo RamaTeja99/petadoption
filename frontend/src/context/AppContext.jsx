@@ -15,7 +15,7 @@ const AppContextProvider = (props) => {
   );
   const [userData, setUserData] = useState(false);
 
-  // Create axios instance
+  // Create axios instance with interceptors
   const api = axios.create({
     baseURL: backendUrl,
   });
@@ -34,9 +34,11 @@ const AppContextProvider = (props) => {
     }
   );
 
-  // Response interceptor for handling auth errors
+  // Response interceptor to handle auth errors
   api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      return response;
+    },
     (error) => {
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
@@ -54,9 +56,17 @@ const AppContextProvider = (props) => {
     try {
       const { data } = await api.get("/api/pet/list");
       if (data.success) {
+        // Transform Spring Boot response to match frontend expectations
         const transformedPets = data.pets.map((pet) => ({
-          ...pet,
           _id: pet.id.toString(),
+          name: pet.name,
+          image: pet.image,
+          breed: pet.breed,
+          age: pet.age,
+          gender: pet.gender,
+          fees: pet.fees,
+          about: pet.about,
+          available: pet.available,
           address:
             typeof pet.address === "string"
               ? JSON.parse(pet.address)
@@ -80,6 +90,7 @@ const AppContextProvider = (props) => {
     try {
       const { data } = await api.get("/api/user/get-profile");
       if (data.success) {
+        // Transform Spring Boot response to match frontend expectations
         const transformedUserData = {
           ...data.userData,
           address:
@@ -100,6 +111,9 @@ const AppContextProvider = (props) => {
 
   useEffect(() => {
     getPetsData();
+  }, []);
+
+  useEffect(() => {
     if (token) {
       loadUserProfileData();
     }
@@ -116,7 +130,7 @@ const AppContextProvider = (props) => {
     userData,
     setUserData,
     loadUserProfileData,
-    api,
+    api, // Export the configured axios instance
   };
 
   return (

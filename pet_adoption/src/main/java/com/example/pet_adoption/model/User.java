@@ -1,7 +1,11 @@
 package com.example.pet_adoption.model;
-
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -11,30 +15,45 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @NotBlank(message = "Name is required")
     @Column(nullable = false)
     private String name;
     
+    @Email(message = "Email should be valid")
+    @NotBlank(message = "Email is required")
     @Column(nullable = false, unique = true)
     private String email;
     
+    @JsonIgnore
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters")
     @Column(nullable = false)
-    @JsonIgnore  // Don't include password in JSON responses
     private String password;
     
-    private String phone;
+    private String image;
     
-    @Column(columnDefinition = "TEXT")
-    private String address;  // JSON string: {"line1": "...", "line2": "..."}
+    @Column(length = 15)
+    private String phone = "000000000";
     
-    private String dob;  // Date of birth
+    @Column(columnDefinition = "JSON")
+    private String address = "{\"line1\":\"\", \"line2\":\"\"}";
     
-    private String gender;
+    private String gender = "Not Selected";
     
-    // Default constructor
-    public User() {}
+    private String dob = "Not Selected";
     
-    // Constructor with basic fields
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Adoption> adoptions;
+    
+    public User() {
+        this.createdAt = LocalDateTime.now();
+    }
+    
     public User(String name, String email, String password) {
+        this();
         this.name = name;
         this.email = email;
         this.password = password;
@@ -73,6 +92,14 @@ public class User {
         this.password = password;
     }
     
+    public String getImage() {
+        return image;
+    }
+    
+    public void setImage(String image) {
+        this.image = image;
+    }
+    
     public String getPhone() {
         return phone;
     }
@@ -89,14 +116,6 @@ public class User {
         this.address = address;
     }
     
-    public String getDob() {
-        return dob;
-    }
-    
-    public void setDob(String dob) {
-        this.dob = dob;
-    }
-    
     public String getGender() {
         return gender;
     }
@@ -105,14 +124,27 @@ public class User {
         this.gender = gender;
     }
     
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", email='" + email + '\'' +
-                ", phone='" + phone + '\'' +
-                ", gender='" + gender + '\'' +
-                '}';
+    public String getDob() {
+        return dob;
+    }
+    
+    public void setDob(String dob) {
+        this.dob = dob;
+    }
+    
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    
+    public List<Adoption> getAdoptions() {
+        return adoptions;
+    }
+    
+    public void setAdoptions(List<Adoption> adoptions) {
+        this.adoptions = adoptions;
     }
 }

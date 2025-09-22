@@ -60,16 +60,16 @@ public class AuthUserFilter extends OncePerRequestFilter {
                 }
                 
                 String userId = jwtUtil.getUserIdFromToken(token);
-                String email = jwtUtil.getEmailFromToken(token);
+//                String email = jwtUtil.getEmailFromToken(token);
                 request.setAttribute("userId", Long.valueOf(userId));
-                request.setAttribute("userEmail", email);
+//                request.setAttribute("userEmail", email);
                 
                 // **CRITICAL**: Set Spring Security authentication context
                 UsernamePasswordAuthenticationToken authentication = 
                     new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 
-                System.out.println("AuthUserFilter: Token valid, userId: " + userId + ", email: " + email + " - Authentication set!");
+                System.out.println("AuthUserFilter: Token valid, userId: " + userId  + " - Authentication set!");
             } catch (Exception e) {
                 System.out.println("AuthUserFilter: Error processing token: " + e.getMessage());
                 sendUnauthorizedResponse(response, "Invalid token");

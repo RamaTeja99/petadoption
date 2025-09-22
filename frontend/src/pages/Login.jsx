@@ -22,7 +22,7 @@ const Login = () => {
     }
     if (mode === "Sign Up" && !passwordRegex.test(password)) {
       toast.error(
-        "Password must be at least 8 characters long and include letters, numbers, and symbols."
+        "Password must be at least 8 characters long and include letters, numbers and symbols"
       );
       return false;
     }
@@ -35,16 +35,32 @@ const Login = () => {
     if (!isInputValid()) return;
 
     try {
-      const endpoint = mode === "Sign Up" ? "/api/user/register" : "/api/user/login";
-      const payload = mode === "Sign Up" ? { name, email, password } : { email, password };
-      const { data } = await api.post(endpoint, payload);
+      if (mode === "Sign Up") {
+        // Use api instance for registration
+        const { data } = await api.post("/api/user/register", {
+          name,
+          email,
+          password,
+        });
 
-      if (data.success) {
-        localStorage.setItem("token", data.token);
-        setToken(data.token);
-        toast.success(`Registration successful!`);
+        if (data.success) {
+          localStorage.setItem("token", data.token);
+          setToken(data.token);
+          toast.success("Registration successful!");
+        } else {
+          toast.error(data.message);
+        }
       } else {
-        toast.error(data.message);
+        // Use api instance for login
+        const { data } = await api.post("/api/user/login", { email, password });
+
+        if (data.success) {
+          localStorage.setItem("token", data.token);
+          setToken(data.token);
+          toast.success("Login successful!");
+        } else {
+          toast.error(data.message);
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred");
@@ -63,7 +79,7 @@ const Login = () => {
         <p className="text-2xl font-semibold">
           {mode === "Sign Up" ? "Create Account" : "Login"}
         </p>
-        <p>Please {mode === "Sign Up" ? "sign up" : "log in"} to book a visit</p>
+        <p>Please {mode === "Sign Up" ? "sign up" : "log in"} to book visit</p>
         {mode === "Sign Up" && (
           <div className="w-full">
             <p>Full Name</p>

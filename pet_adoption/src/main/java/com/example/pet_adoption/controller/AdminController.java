@@ -11,7 +11,7 @@ import com.example.pet_adoption.service.AdminService;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/api/admin")
 @CrossOrigin(origins = "*")
 public class AdminController {
     
