@@ -58,7 +58,7 @@ public class UserService {
             user.setName(registrationDto.getName());
             user.setEmail(registrationDto.getEmail());
             user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
-            user.setImage("default-user.png");
+            // user.setImage("default-user.png");
             User savedUser = userRepository.save(user);
             String token = jwtUtil.generateToken(savedUser.getId().toString());
             
