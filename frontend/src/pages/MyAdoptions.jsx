@@ -8,13 +8,23 @@ import { assets } from "../assets/assets";
 const MyAdoptions = () => {
   const { backendUrl, token, api } = useContext(AppContext);
   const navigate = useNavigate();
-  
+
   const [adoptions, setAdoptions] = useState([]);
   const [payment, setPayment] = useState("");
-  
+
   const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
 
   // Function to format the date eg. ( 20_01_2000 => 20 Jan 2000 )
@@ -29,30 +39,52 @@ const MyAdoptions = () => {
   const getUserAdoptions = async () => {
     try {
       const { data } = await api.get("/api/user/adoptions");
-      
+      console.log(data);
       if (data.success) {
         // Transform Spring Boot response to match frontend expectations
-        const transformedAdoptions = data.adoptions.map(adoption => ({
-          _id: adoption.id.toString(),
-          petId: adoption.pet.id.toString(),
-          slotDate: adoption.slotDate,
-          slotTime: adoption.slotTime,
-          amount: adoption.amount,
-          date: adoption.date,
-          cancelled: adoption.cancelled,
-          payment: adoption.payment,
-          isCompleted: adoption.isCompleted,
-          petData: {
-            name: adoption.pet.name,
-            breed: adoption.pet.breed,
-            image: adoption.pet.image,
-            address: typeof adoption.pet.address === 'string' ? 
-              JSON.parse(adoption.pet.address) : adoption.pet.address
-          },
-          userData: typeof adoption.userData === 'string' ? 
-            JSON.parse(adoption.userData) : adoption.userData
-        }));
-        
+        const transformedAdoptions = data.adoptions.map((adoption) => {
+          // Parse petData string to object if needed
+          let petData = adoption.petData;
+          if (typeof petData === "string") {
+            try {
+              petData = JSON.parse(petData);
+            } catch (e) {
+              petData = {};
+            }
+          }
+          // Parse userData string to object if needed
+          let userData = adoption.userData;
+          if (typeof userData === "string") {
+            try {
+              userData = JSON.parse(userData);
+            } catch (e) {
+              userData = {};
+            }
+          }
+
+          return {
+            _id: adoption.id?.toString(),
+            petId: petData.id?.toString(),
+            slotDate: adoption.slotDate,
+            slotTime: adoption.slotTime,
+            amount: adoption.amount,
+            date: adoption.date,
+            cancelled: adoption.cancelled,
+            payment: adoption.payment,
+            isCompleted: adoption.isCompleted,
+            petData: {
+              name: petData.name,
+              breed: petData.breed,
+              image: petData.image,
+              address:
+                typeof petData.address === "string"
+                  ? JSON.parse(petData.address)
+                  : petData.address,
+            },
+            userData: userData,
+          };
+        });
+
         setAdoptions(transformedAdoptions.reverse());
       } else {
         toast.error(data.message);
@@ -66,10 +98,10 @@ const MyAdoptions = () => {
   // Function to cancel adoption Using API
   const cancelAdoption = async (adoptionId) => {
     try {
-      const { data } = await api.post("/api/user/cancel-adoption", { 
-        adoptionId: parseInt(adoptionId) 
+      const { data } = await api.post("/api/user/cancel-adoption", {
+        adoptionId: parseInt(adoptionId),
       });
-      
+
       if (data.success) {
         toast.success(data.message);
         getUserAdoptions();
@@ -95,7 +127,6 @@ const MyAdoptions = () => {
       handler: async (response) => {
         console.log(response);
         try {
-          // Implement payment verification if needed
           toast.success("Payment successful!");
           getUserAdoptions();
         } catch (error) {
@@ -104,7 +135,7 @@ const MyAdoptions = () => {
         }
       },
     };
-    
+
     if (window.Razorpay) {
       const rzp = new window.Razorpay(options);
       rzp.open();
@@ -113,10 +144,8 @@ const MyAdoptions = () => {
     }
   };
 
-  // Function to make payment using razorpay (placeholder)
   const adoptionRazorpay = async (adoptionId) => {
     try {
-      // This would need to be implemented in Spring Boot backend
       toast.info("Payment gateway integration needed in backend");
     } catch (error) {
       console.log(error);
@@ -124,10 +153,8 @@ const MyAdoptions = () => {
     }
   };
 
-  // Function to make payment using stripe (placeholder)
   const adoptionStripe = async (adoptionId) => {
     try {
-      // This would need to be implemented in Spring Boot backend
       toast.info("Payment gateway integration needed in backend");
     } catch (error) {
       console.log(error);

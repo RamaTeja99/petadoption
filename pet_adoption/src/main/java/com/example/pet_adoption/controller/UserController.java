@@ -71,7 +71,9 @@ public class UserController {
     @GetMapping("/adoptions")
     public ResponseEntity<Map<String, Object>> listAdoptions(@RequestHeader("token") String token,
                                                             @RequestAttribute("userId") Long userId) {
+        System.out.println("UserId"+userId);
         Map<String, Object> response = userService.listUserAdoptions(userId);
+        System.out.println("Responses"+response);
         return ResponseEntity.ok(response);
     }
     

@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import com.example.pet_adoption.service.PetService;
 
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/pet")
@@ -24,6 +27,10 @@ public class PetController {
         
         Map<String, Object> response = petService.loginShelter(email, password);
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/welcome")
+    public String welcome() {
+        return new String("Welcome to Pet Adoption Service Server is running...");
     }
     
     @GetMapping("/adoptions")

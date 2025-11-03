@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-PetAdoptionApplication<pet_adoption>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.pet_adoption.PetAdoptionApplication",
+            "projectName": "pet_adoption",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

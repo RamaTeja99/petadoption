@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -59,6 +61,7 @@ public class Pet {
     private String shelter;
     
     @OneToMany(mappedBy = "pet", cascade = CascadeType.ALL)
+    @JsonManagedReference 
     private List<Adoption> adoptions;
     
     public Pet() {

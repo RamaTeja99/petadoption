@@ -14,8 +14,8 @@
 
     <groupId>example.petadoption</groupId>
     <artifactId>pet_adoption</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>pet_adoption</name>
+    <version>0.0.2-SNAPSHOT</version>
+    <name>pet_adoption-2</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
@@ -131,6 +131,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
+                            <version>1.18.36</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

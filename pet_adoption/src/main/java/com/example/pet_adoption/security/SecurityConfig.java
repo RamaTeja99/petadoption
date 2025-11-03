@@ -35,14 +35,12 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
                 // Public endpoints
-                .requestMatchers("/api/user/login", "/api/user/register").permitAll()
+                .requestMatchers("/api/user/login", "/api/user/register","/api/admin/login","/api/pet/welcome").permitAll()
                 .requestMatchers("/api/pet/list", "/api/pet/{id}").permitAll()
                 .requestMatchers("/images/**", "/h2-console/**", "/error").permitAll()
 
                 // Protected endpoints
                 .requestMatchers("/api/user/**").authenticated()
-                .requestMatchers("/api/admin/**").authenticated()
-                .requestMatchers("/api/pet/add").authenticated()
 
 
                 // Deny all other requests by default

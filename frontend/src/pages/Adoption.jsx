@@ -142,6 +142,7 @@ const Adoption = () => {
       {/* Pet Details */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div>
+          <p>{console.log(petInfo)}</p>
           <img
             className="bg-primary w-full sm:max-w-72 rounded-lg"
             src={petInfo.image || assets.pet_icon}
