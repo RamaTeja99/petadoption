@@ -36,6 +36,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 // Public endpoints
                 .requestMatchers("/api/user/login", "/api/user/register","/api/admin/login","/api/pet/welcome").permitAll()
+                .requestMatchers("/api/user/login", "/api/user/register","/api/admin/login").permitAll()
                 .requestMatchers("/api/pet/list", "/api/pet/{id}").permitAll()
                 .requestMatchers("/images/**", "/h2-console/**", "/error").permitAll()
 

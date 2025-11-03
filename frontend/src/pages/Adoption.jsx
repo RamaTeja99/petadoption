@@ -20,15 +20,15 @@ const Adoption = () => {
   const navigate = useNavigate();
 
   const fetchPetInfo = async () => {
-    const petInfo = pets.find((pet) => pet._id === petId);
+    const petInfo = pets.find((pet) => pet._id === petId || pet.id === petId);
     setPetInfo(petInfo);
   };
 
   const getAvailableSlots = async () => {
     setPetSlots([]);
-
     // getting current date
     let today = new Date();
+
     for (let i = 0; i < 7; i++) {
       // getting date with index
       let currentDate = new Date(today);
@@ -37,7 +37,7 @@ const Adoption = () => {
       // setting end time of the date with index
       let endTime = new Date();
       endTime.setDate(today.getDate() + i);
-      endTime.setHours(21, 0, 0, 0);
+      endTime.setHours(24, 0, 0, 0);
 
       // setting hours
       if (today.getDate() === currentDate.getDate()) {
@@ -51,6 +51,7 @@ const Adoption = () => {
       }
 
       let timeSlots = [];
+
       while (currentDate < endTime) {
         let formattedTime = currentDate.toLocaleTimeString([], {
           hour: "2-digit",
@@ -99,6 +100,7 @@ const Adoption = () => {
     }
 
     const date = petSlots[slotIndex][0].datetime;
+
     let day = date.getDate();
     let month = date.getMonth() + 1;
     let year = date.getFullYear();
@@ -139,36 +141,50 @@ const Adoption = () => {
 
   return petInfo ? (
     <div>
-      {/* Pet Details */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div>
+<<<<<<< HEAD
           <p>{console.log(petInfo)}</p>
+=======
+          {/* FIXED: Display image correctly */}
+>>>>>>> 29bb20e86dc194e7d6430264a9d88d88f08a97bd
           <img
             className="bg-primary w-full sm:max-w-72 rounded-lg"
-            src={petInfo.image || assets.pet_icon}
-            alt=""
+            src={
+              petInfo.image
+                ? `${backendUrl}${petInfo.image}`
+                : assets.upload_area
+            }
+            alt={petInfo.name || "Pet"}
+            onError={(e) => {
+              e.target.src = assets.upload_area; // Fallback image
+            }}
           />
         </div>
 
         <div className="flex-1 border border-[#ADADAD] rounded-lg p-8 py-7 bg-white mx-2 sm:mx-0 mt-[-80px] sm:mt-0">
-          {/* Pet Info */}
           <p className="flex items-center gap-2 text-3xl font-medium text-gray-700">
             {petInfo.name}
             <img className="w-5" src={assets.verified_icon} alt="" />
           </p>
+
           <div className="flex items-center gap-2 mt-1 text-gray-600">
             <p>
               {petInfo.age} - {petInfo.breed}
             </p>
             <button className="py-0.5 px-2 border text-xs rounded-full">
-              {petInfo.gender}
+              {petInfo.experience}
             </button>
           </div>
 
-          {/* About */}
           <div>
             <p className="flex items-center gap-1 text-sm font-medium text-[#262626] mt-3">
-              About <img src={assets.info_icon} alt="" />
+              About{" "}
+              <img
+                src={assets.info_icon}
+                alt=""
+                className="w-4 h-4 inline-block align-middle"
+              />
             </p>
             <p className="text-sm text-gray-600 max-w-[700px] mt-1">
               {petInfo.about}
@@ -178,22 +194,20 @@ const Adoption = () => {
           <p className="text-gray-600 font-medium mt-4">
             Adoption fee:{" "}
             <span className="text-gray-800">
-              {currencySymbol}
-              {petInfo.fees}
+              {currencySymbol} {petInfo.fees}
             </span>
           </p>
         </div>
       </div>
 
-      {/* Booking Slots */}
       <div className="sm:ml-72 sm:pl-4 mt-8 font-medium text-[#565656]">
         <p>Visit Booking slots</p>
-        <div className="flex gap-3 items-center w-full overflow-x-scroll mt-4">
+        <div className="flex gap-3 items-center w-full mt-4">
           {petSlots.length &&
             petSlots.map((item, index) => (
               <div
                 onClick={() => setSlotIndex(index)}
-                className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${
+                className={`text-center py-6 min-w-16 rounded-t-lg cursor-pointer ${
                   slotIndex === index
                     ? "bg-primary text-white"
                     : "border border-[#DDDDDD]"
@@ -205,7 +219,8 @@ const Adoption = () => {
               </div>
             ))}
         </div>
-        <div className="flex items-center gap-3 w-full overflow-x-scroll mt-4">
+
+        <div className="flex items-center gap-3 w-full mt-4 overflow-x-scroll">
           {petSlots.length &&
             petSlots[slotIndex].map((item, index) => (
               <p
@@ -221,16 +236,16 @@ const Adoption = () => {
               </p>
             ))}
         </div>
+
         <button
           onClick={bookAdoption}
-          className="bg-primary text-white text-sm font-light px-20 py-3 rounded-full my-6"
+          className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6"
         >
           Book a visit
         </button>
       </div>
 
-      {/* Related Pets */}
-      <RelatedPets petId={petId} breed={petInfo.breed} />
+      <RelatedPets petId={petId} speciality={petInfo.speciality} />
     </div>
   ) : null;
 };
