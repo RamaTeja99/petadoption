@@ -5,41 +5,33 @@ import { assets } from "../assets/assets";
 import RelatedPets from "../components/RelatedPets";
 import axios from "axios";
 import { toast } from "react-toastify";
+import RazorpayPayment from "./RazorpayPayment";
 
 const Adoption = () => {
   const { petId } = useParams();
-  const { pets, currencySymbol, backendUrl, token, getPetsData, api } =
+  const { pets, currencySymbol, backendUrl, token, getPetsData, user } =
     useContext(AppContext);
   const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-
   const [petInfo, setPetInfo] = useState(false);
   const [petSlots, setPetSlots] = useState([]);
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState("");
-
   const navigate = useNavigate();
 
   const fetchPetInfo = async () => {
-    const petInfo = pets.find((pet) => pet._id === petId || pet.id === petId);
-    setPetInfo(petInfo);
+    const info = pets.find((pet) => pet._id === petId || pet.id === petId);
+    setPetInfo(info);
   };
 
   const getAvailableSlots = async () => {
     setPetSlots([]);
-    // getting current date
     let today = new Date();
-
     for (let i = 0; i < 7; i++) {
-      // getting date with index
       let currentDate = new Date(today);
       currentDate.setDate(today.getDate() + i);
-
-      // setting end time of the date with index
       let endTime = new Date();
       endTime.setDate(today.getDate() + i);
       endTime.setHours(24, 0, 0, 0);
-
-      // setting hours
       if (today.getDate() === currentDate.getDate()) {
         currentDate.setHours(
           currentDate.getHours() > 10 ? currentDate.getHours() + 1 : 10
@@ -49,41 +41,30 @@ const Adoption = () => {
         currentDate.setHours(10);
         currentDate.setMinutes(0);
       }
-
       let timeSlots = [];
-
       while (currentDate < endTime) {
         let formattedTime = currentDate.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         });
-
         let day = currentDate.getDate();
         let month = currentDate.getMonth() + 1;
         let year = currentDate.getFullYear();
-
         const slotDate = day + "_" + month + "_" + year;
         const slotTime = formattedTime;
-
-        // Check if slot is available (handle both string and object formats)
         const slotsBooked = petInfo.slots_booked || {};
         const isSlotAvailable =
           slotsBooked[slotDate] && slotsBooked[slotDate].includes(slotTime)
             ? false
             : true;
-
         if (isSlotAvailable) {
-          // Add slot to array
           timeSlots.push({
             datetime: new Date(currentDate),
             time: formattedTime,
           });
         }
-
-        // Increment current time by 30 minutes
         currentDate.setMinutes(currentDate.getMinutes() + 30);
       }
-
       setPetSlots((prev) => [...prev, timeSlots]);
     }
   };
@@ -93,27 +74,25 @@ const Adoption = () => {
       toast.warn("Login to book visit");
       return navigate("/login");
     }
-
     if (!slotTime) {
       toast.warn("Please select a time slot");
       return;
     }
-
     const date = petSlots[slotIndex][0].datetime;
-
     let day = date.getDate();
     let month = date.getMonth() + 1;
     let year = date.getFullYear();
-
     const slotDate = day + "_" + month + "_" + year;
-
     try {
-      const { data } = await api.post("/api/user/book-adoption", {
-        petId: parseInt(petId), // Convert to number as Spring Boot expects Long
-        slotDate,
-        slotTime,
-      });
-
+      const { data } = await axios.post(
+        `/api/user/book-adoption`,
+        {
+          petId: parseInt(petId),
+          slotDate,
+          slotTime,
+        },
+        { headers: { token: token } }
+      );
       if (data.success) {
         toast.success(data.message);
         getPetsData();
@@ -122,9 +101,17 @@ const Adoption = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.response?.data?.message || "Failed to book adoption");
     }
+  };
+
+  // Payment success/fail handlers for RazorpayPayment
+  const handlePaymentSuccess = (resp) => {
+    toast.success("Payment successful!");
+    // Optionally, refresh adoptions/payments here or redirect
+  };
+  const handlePaymentFailure = (errmsg) => {
+    toast.error(errmsg);
   };
 
   useEffect(() => {
@@ -143,11 +130,6 @@ const Adoption = () => {
     <div>
       <div className="flex flex-col sm:flex-row gap-4">
         <div>
-<<<<<<< HEAD
-          <p>{console.log(petInfo)}</p>
-=======
-          {/* FIXED: Display image correctly */}
->>>>>>> 29bb20e86dc194e7d6430264a9d88d88f08a97bd
           <img
             className="bg-primary w-full sm:max-w-72 rounded-lg"
             src={
@@ -161,13 +143,11 @@ const Adoption = () => {
             }}
           />
         </div>
-
         <div className="flex-1 border border-[#ADADAD] rounded-lg p-8 py-7 bg-white mx-2 sm:mx-0 mt-[-80px] sm:mt-0">
           <p className="flex items-center gap-2 text-3xl font-medium text-gray-700">
             {petInfo.name}
             <img className="w-5" src={assets.verified_icon} alt="" />
           </p>
-
           <div className="flex items-center gap-2 mt-1 text-gray-600">
             <p>
               {petInfo.age} - {petInfo.breed}
@@ -176,7 +156,6 @@ const Adoption = () => {
               {petInfo.experience}
             </button>
           </div>
-
           <div>
             <p className="flex items-center gap-1 text-sm font-medium text-[#262626] mt-3">
               About{" "}
@@ -190,7 +169,6 @@ const Adoption = () => {
               {petInfo.about}
             </p>
           </div>
-
           <p className="text-gray-600 font-medium mt-4">
             Adoption fee:{" "}
             <span className="text-gray-800">
@@ -219,7 +197,6 @@ const Adoption = () => {
               </div>
             ))}
         </div>
-
         <div className="flex items-center gap-3 w-full mt-4 overflow-x-scroll">
           {petSlots.length &&
             petSlots[slotIndex].map((item, index) => (
@@ -236,15 +213,21 @@ const Adoption = () => {
               </p>
             ))}
         </div>
-
         <button
           onClick={bookAdoption}
           className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6"
         >
           Book a visit
         </button>
+        {/* Razorpay payment button - PASS selected slot/adoption ID if required */}
+        <RazorpayPayment
+          amount={petInfo.fees}
+          userId={user?.id}
+          adoptionId={parseInt(petId)}
+          onSuccess={handlePaymentSuccess}
+          onFailure={handlePaymentFailure}
+        />
       </div>
-
       <RelatedPets petId={petId} speciality={petInfo.speciality} />
     </div>
   ) : null;

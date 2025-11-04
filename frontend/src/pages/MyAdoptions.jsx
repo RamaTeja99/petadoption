@@ -5,6 +5,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
 
+const RAZORPAY_KEY_ID = "rzp_test_RYsjZGpaSI78sz"; // Replace with your Razorpay test key
+
 const MyAdoptions = () => {
   const { backendUrl, token, api } = useContext(AppContext);
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ const MyAdoptions = () => {
     "Dec",
   ];
 
-  // Function to format the date eg. ( 20_01_2000 => 20 Jan 2000 )
+  // Format slot date
   const slotDateFormat = (slotDate) => {
     const dateArray = slotDate.split("_");
     return (
@@ -35,15 +37,12 @@ const MyAdoptions = () => {
     );
   };
 
-  // Getting User Adoptions Data Using API
+  // Get user adoptions
   const getUserAdoptions = async () => {
     try {
       const { data } = await api.get("/api/user/adoptions");
-      console.log(data);
       if (data.success) {
-        // Transform Spring Boot response to match frontend expectations
         const transformedAdoptions = data.adoptions.map((adoption) => {
-          // Parse petData string to object if needed
           let petData = adoption.petData;
           if (typeof petData === "string") {
             try {
@@ -52,7 +51,6 @@ const MyAdoptions = () => {
               petData = {};
             }
           }
-          // Parse userData string to object if needed
           let userData = adoption.userData;
           if (typeof userData === "string") {
             try {
@@ -61,7 +59,6 @@ const MyAdoptions = () => {
               userData = {};
             }
           }
-
           return {
             _id: adoption.id?.toString(),
             petId: petData.id?.toString(),
@@ -84,24 +81,21 @@ const MyAdoptions = () => {
             userData: userData,
           };
         });
-
         setAdoptions(transformedAdoptions.reverse());
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.response?.data?.message || "Failed to load adoptions");
     }
   };
 
-  // Function to cancel adoption Using API
+  // Cancel adoption
   const cancelAdoption = async (adoptionId) => {
     try {
       const { data } = await api.post("/api/user/cancel-adoption", {
         adoptionId: parseInt(adoptionId),
       });
-
       if (data.success) {
         toast.success(data.message);
         getUserAdoptions();
@@ -109,63 +103,86 @@ const MyAdoptions = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      console.log(error);
       toast.error(error.response?.data?.message || "Failed to cancel adoption");
     }
   };
 
-  // Payment gateway integration (placeholder - implement as needed)
-  const initPay = (order) => {
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: order.amount,
-      currency: order.currency,
-      name: "Adoption Payment",
-      description: "Adoption Payment",
-      order_id: order.id,
-      receipt: order.receipt,
-      handler: async (response) => {
-        console.log(response);
-        try {
-          toast.success("Payment successful!");
-          getUserAdoptions();
-        } catch (error) {
-          console.log(error);
-          toast.error("Payment verification failed");
-        }
-      },
-    };
-
-    if (window.Razorpay) {
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } else {
-      toast.error("Payment gateway not available");
-    }
-  };
-
+  // Razorpay payment handler for an adoption
   const adoptionRazorpay = async (adoptionId) => {
-    try {
-      toast.info("Payment gateway integration needed in backend");
-    } catch (error) {
-      console.log(error);
-      toast.error("Payment failed");
+    const adoption = adoptions.find((item) => item._id === adoptionId);
+    if (!adoption) {
+      toast.error("Adoption not found.");
+      return;
     }
-  };
-
-  const adoptionStripe = async (adoptionId) => {
     try {
-      toast.info("Payment gateway integration needed in backend");
+      // Step 1. Request backend to create an order
+      const orderResponse = await axios.post(
+        "http://localhost:8081/api/payment/create-order",
+        {
+          userId: adoption.userData?.id,
+          adoptionId: parseInt(adoptionId),
+          amount: adoption.amount,
+        }
+      );
+      if (!orderResponse.data.success) {
+        toast.error(orderResponse.data.message || "Order creation failed");
+        return;
+      }
+      const { orderId, amount, currency } = orderResponse.data;
+
+      // Step 2. Create Razorpay Checkout options
+      const options = {
+        key: RAZORPAY_KEY_ID,
+        amount: amount,
+        currency: currency,
+        name: "Adoption Payment",
+        description: "Adoption Payment",
+        order_id: orderId,
+        prefill: {
+          name: adoption.userData?.name,
+          email: adoption.userData?.email,
+          contact: adoption.userData?.phone,
+        },
+        theme: { color: "#3399cc" },
+        handler: async (response) => {
+          try {
+            // Verify payment on backend
+            const verifyResponse = await axios.post(
+              "http://localhost:8081/api/payment/verify-payment",
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }
+            );
+            if (verifyResponse.data.success) {
+              toast.success("Payment successful!");
+              getUserAdoptions();
+            } else {
+              toast.error("Payment verification failed");
+            }
+          } catch (error) {
+            toast.error("Payment verification failed");
+          }
+        },
+        modal: {
+          ondismiss: () => {},
+        },
+      };
+      // Step 3. Open Razorpay Checkout
+      if (window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        toast.error("Payment gateway not available");
+      }
     } catch (error) {
-      console.log(error);
-      toast.error("Payment failed");
+      toast.error("Payment initiation failed");
     }
   };
 
   useEffect(() => {
-    if (token) {
-      getUserAdoptions();
-    }
+    if (token) getUserAdoptions();
   }, [token]);
 
   return (
@@ -192,8 +209,8 @@ const MyAdoptions = () => {
               </p>
               <p>{item.petData.breed}</p>
               <p className="text-[#464646] font-medium mt-1">Address:</p>
-              <p className="text-xs">{item.petData.address.line1}</p>
-              <p className="text-xs">{item.petData.address.line2}</p>
+              <p className="text-xs">{item.petData.address?.line1}</p>
+              <p className="text-xs">{item.petData.address?.line2}</p>
               <p className="text-xs mt-1">
                 <span className="text-sm text-[#3C3C3C] font-medium">
                   Date & Time:{" "}
